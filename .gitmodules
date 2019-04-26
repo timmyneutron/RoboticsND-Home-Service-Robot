@@ -10,3 +10,6 @@
 [submodule "src/turtlebot_interactions"]
 	path = src/turtlebot_interactions
 	url = https://github.com/turtlebot/turtlebot_interactions.git
+[submodule "src/pgm_map_creator"]
+	path = src/pgm_map_creator
+	url = https://github.com/udacity/pgm_map_creator.git
