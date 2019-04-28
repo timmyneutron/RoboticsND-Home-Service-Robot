@@ -27,7 +27,13 @@ To begin, make sure all relevant packages are up-to-date:
 $ sudo apt-get update && sudo apt-get upgrade -y
 ```
 
-Next, download/clone the repository, navigate up to the root level directory, and execute:
+Next, clone the repository:
+
+```
+$ git clone --recurse-submodules https://github.com/timmyneutron/RoboticsND-Home-Service-Robot.git
+```
+
+Then navigate up to the root level directory, and execute:
 
 ```
 $ catkin_make
