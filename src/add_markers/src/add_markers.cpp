@@ -1,17 +1,44 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
+#include <nav_msgs/Odometry.h>
+#include <math.h>
+
+double pickUpX = 3.0;
+double pickUpY = 3.0;
+double dropOffX = -3.0;
+double dropOffY = 3.0;
+
+bool itemPickedUp = false;
+bool itemDroppedOff = false;
+
+void odomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
+  double robotX = msg->pose.pose.position.x;
+  double robotY = msg->pose.pose.position.y;
+  
+  double distanceToPickup = sqrt(pow(robotX - pickUpX, 2) + pow(robotY - pickUpY, 2));
+  double distanceToDropoff = sqrt(pow(robotX - dropOffX, 2) + pow(robotY - dropOffY, 2));  
+
+  if (distanceToPickup < 0.3) {
+    itemPickedUp = true;
+  }
+  
+  if (distanceToDropoff < 0.3) {
+    itemDroppedOff = true;
+  }
+}
+
 
 int main( int argc, char** argv )
 {
   ros::init(argc, argv, "add_markers");
   ros::NodeHandle n;
-  ros::Rate r(0.2);
   ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+  ros::Subscriber odom_sub = n.subscribe("odom", 10, odomCallback);
+
+  visualization_msgs::Marker marker;
 
   // Set our initial shape type to be a cube
   uint32_t shape = visualization_msgs::Marker::CUBE;
-  
-  visualization_msgs::Marker marker;
 
   // Set the frame ID and timestamp.  See the TF tutorials for information on these.
   marker.header.frame_id = "map";
@@ -26,6 +53,8 @@ int main( int argc, char** argv )
   marker.type = shape;
 
   // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
+  marker.pose.position.x = pickUpX;
+  marker.pose.position.y = pickUpY;
   marker.pose.position.z = 0;
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
@@ -33,9 +62,9 @@ int main( int argc, char** argv )
   marker.pose.orientation.w = 1.0;
 
   // Set the scale of the marker -- 1x1x1 here means 1m on a side
-  marker.scale.x = 1.0;
-  marker.scale.y = 1.0;
-  marker.scale.z = 1.0;
+  marker.scale.x = 0.2;
+  marker.scale.y = 0.2;
+  marker.scale.z = 0.2;
 
   // Set the color -- be sure to set alpha to something non-zero!
   marker.color.r = 0.0f;
@@ -57,28 +86,24 @@ int main( int argc, char** argv )
       sleep(1);
     }
     
-    // Set marker at the pickup location
-    marker.pose.position.x = 1;
-    marker.pose.position.y = 2;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker_pub.publish(marker);
-    r.sleep();
+    if (!itemPickedUp)
+    {
+      marker.action = visualization_msgs::Marker::ADD;
+      marker_pub.publish(marker);
+    }
+    else if (!itemDroppedOff)
+    {
+      marker.action = visualization_msgs::Marker::DELETE;
+      marker_pub.publish(marker);
+    }
+    else
+    {
+      marker.pose.position.x = dropOffX;
+      marker.pose.position.y = dropOffY;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker_pub.publish(marker);
+    }
     
-    // Delete marker
-    marker.action = visualization_msgs::Marker::DELETE;
-    marker_pub.publish(marker);
-    r.sleep();
-    
-    // Set marker at dropoff location
-    marker.pose.position.x = 1;
-    marker.pose.position.y = 4;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker_pub.publish(marker);
-    r.sleep();
-    
-    // Delete marker
-    marker.action = visualization_msgs::Marker::DELETE;
-    marker_pub.publish(marker);
-    r.sleep();
+    ros::spinOnce();
   }
 }
